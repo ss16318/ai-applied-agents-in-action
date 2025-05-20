@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "setup": "./scripts/setup.sh",
-    "dev": "./scripts/dev.sh"
-  },
+"scripts": {
+  "setup": "bash ./scripts/setup.sh",
+  "dev": "bash ./scripts/dev.sh"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -43,9 +43,12 @@ def process_documents():
             project_id=project_id,
         )
 
-        for filename in os.listdir("docs"):
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # Points to .../api/scripts
+        docs_dir = os.path.abspath(os.path.join(current_dir, "..", "docs"))  # Points to .../api/docs
+
+        for filename in os.listdir(docs_dir):
             if filename.endswith(".txt"):
-                file_path = os.path.join("docs", filename)
+                file_path = os.path.join(docs_dir, filename)  # ✅ Correct path
                 with open(file_path, "rb") as f:
                     content = f.read()
                     txt_files.append(("files", (filename, content, "text/plain")))
@@ -56,10 +59,26 @@ def process_documents():
                 file_path = os.path.join(temp_dir, filename)
                 file_name = os.path.splitext(filename)[0]
 
-                with open(file_path, "wb") as buffer:
-                    buffer.write(content)
+                try:
+                    decoded = content.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    print(f"❌ Could not decode {filename} as UTF-8: {e}")
+                    continue
 
-                loader = TextLoader(file_path)
+                with open(file_path, "w", encoding="utf-8") as buffer:
+                    buffer.write(decoded)
+
+                print(f"✅ Written decoded content to temp file: {file_path}")
+
+                try:
+                    loader = TextLoader(file_path, encoding="utf-8")
+                    documents = loader.load()
+                except Exception as e:
+                    print(f"❌ Failed to load {file_path} with TextLoader: {e}")
+                    continue
+
+                print(f"📄 Loaded {len(documents)} documents from {filename}")
+
 
                 text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=800,
@@ -68,7 +87,8 @@ def process_documents():
                     separators=["\n\n", "\n", " "],
                     is_separator_regex=False,
                 )
-                documents = loader.load()
+
+                
                 splits = text_splitter.split_documents(documents)
                 collection = chroma_client.get_or_create_collection(
                     name=file_name.lower(),
